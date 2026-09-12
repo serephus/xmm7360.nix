@@ -1,7 +1,7 @@
 { config, pkgs, lib, ... }:
 
 let
-  cfg = config.netkit.xmm7360;
+  cfg = config.xmm7360;
 
   inherit (lib) mkEnableOption mkIf mkOption types;
 
@@ -16,7 +16,7 @@ let
   xmm7360ConfigFile =
     pkgs.writeText "xmm7360.ini" (lib.generators.toKeyValue { } cfg.config);
 in {
-  options.netkit.xmm7360 = {
+  options.xmm7360 = {
     enable = mkEnableOption "support for the Fibocom L850-GL (Intel XMM7360) WWAN modem";
 
     autoStart = mkOption {
@@ -56,8 +56,8 @@ in {
     assertions = [{
       assertion = cfg.config ? apn;
       message = ''
-        netkit.xmm7360.config must contain an `apn` attribute, e.g.
-        `netkit.xmm7360.config.apn = "your.apn.here";`.
+        xmm7360.config must contain an `apn` attribute, e.g.
+        `xmm7360.config.apn = "your.apn.here";`.
       '';
     }];
 
