@@ -1,0 +1,34 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "nix"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # for templates: for a non-root directory the github-actions ecosystem only scans the
+  # top level for *.yml/*.yaml, so point at the workflows dir itself.
+  # python and typst have no workflow files yet, so they're not listed.
+  - package-ecosystem: "github-actions"
+    directory: "/modules/_templates/rust/.github/workflows"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/modules/_templates/bevy/.github/workflows"
+    schedule:
+      interval: "monthly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/modules/_templates/cpp/.github/workflows"
+    schedule:
+      interval: "monthly"
