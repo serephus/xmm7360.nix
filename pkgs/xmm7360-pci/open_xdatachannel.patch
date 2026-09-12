@@ -1,0 +1,22 @@
+diff --git a/rpc/open_xdatachannel.py b/rpc/open_xdatachannel.py
+--- a/rpc/open_xdatachannel.py
++++ b/rpc/open_xdatachannel.py
+@@ -107,7 +107,8 @@
+     ipr.route('add',
+               dst='default',
+               priority=cfg.metric,
+-              oif=idx)
++              oif=idx,
++              family=socket.AF_INET)
+ 
+ # Add DNS values to /etc/resolv.conf
+ if not cfg.noresolv:
+@@ -128,7 +129,7 @@
+ r.execute('UtaRPCPSConnectSetupReq', csr_req)
+ 
+ if not cfg.dbus:
+-    sys.exit(1)
++    sys.exit(0)
+ 
+ myconnection = None
+ system_bus = dbus.SystemBus()

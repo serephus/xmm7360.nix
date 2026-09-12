@@ -14,7 +14,10 @@ in stdenv.mkDerivation {
     sha256 = "sha256-wwm9ELALiJrC54azyJ95Rm3pcGLYzhxEe9mcCUvSVKk=";
   };
 
-  patches = [ ./kernel-compat.patch ];
+  patches = [
+    ./kernel-compat.patch
+    ./open_xdatachannel.patch
+  ];
 
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
