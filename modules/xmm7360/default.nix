@@ -1,70 +1,98 @@
-{ pkgs, config, lib, ... }:
-
-with lib;
+{ config, pkgs, lib, ... }:
 
 let
   cfg = config.netkit.xmm7360;
+
+  inherit (lib) mkEnableOption mkIf mkOption types;
+
+  xmm7360Package =
+    if cfg.package != null then
+      cfg.package
+    else
+      pkgs.callPackage ../../pkgs/xmm7360-pci {
+        kernel = config.boot.kernelPackages.kernel;
+      };
+
   xmm7360ConfigFile =
-    pkgs.writeText "xmm7360.ini" (generators.toKeyValue { } cfg.config);
+    pkgs.writeText "xmm7360.ini" (lib.generators.toKeyValue { } cfg.config);
 in {
   options.netkit.xmm7360 = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Enable Fibocom L850-GL WWAN Modem.";
-    };
+    enable = mkEnableOption "support for the Fibocom L850-GL (Intel XMM7360) WWAN modem";
+
     autoStart = mkOption {
       type = types.bool;
       default = false;
-      description = "Start the service on startup.";
+      description = "Start the modem configuration service on boot.";
     };
+
     config = mkOption {
       type = with types; attrsOf (oneOf [ bool int str ]);
-      description = "xmm7360.ini config file (no section names required).";
       default = { };
+      example = {
+        apn = "3gnet";
+        nodefaultroute = false;
+        noresolv = true;
+      };
+      description = ''
+        xmm7360.ini configuration written as a flat attribute set. Supported
+        keys are the arguments of `open_xdatachannel.py` (e.g. `apn`,
+        `nodefaultroute`, `metric`, `ip-fetch-timeout`, `noresolv`, `dbus`).
+        `apn` is required.
+      '';
     };
+
     package = mkOption {
-      type = types.package;
-      description =
-        "Kernel Module Package of XMM7360-PCI to use. Make sure that this matches up with your kernel version.";
+      type = types.nullOr types.package;
+      default = null;
+      description = ''
+        Kernel module package of XMM7360-PCI to use. If left as `null`, the
+        package is built automatically for the kernel selected by
+        `boot.kernelPackages`.
+      '';
     };
   };
 
   config = mkIf cfg.enable {
-    boot.extraModulePackages = [ cfg.package ];
+    assertions = [{
+      assertion = cfg.config ? apn;
+      message = ''
+        netkit.xmm7360.config must contain an `apn` attribute, e.g.
+        `netkit.xmm7360.config.apn = "your.apn.here";`.
+      '';
+    }];
 
-    # Currently, due to absence of power management, xmm7360 needs to be brought down and reconnected on resume.
-    std.misc.restartOnResumeServices = [ "xmm7360" ];
+    boot.extraModulePackages = [ xmm7360Package ];
+
+    # The in-tree `iosm` driver claims the same PCI device (8086:7360) and
+    # would prevent the out-of-tree `xmm7360` driver from binding to it.
+    boot.blacklistedKernelModules = [ "iosm" ];
+
+    # Note: the driver has no power management support. The modem powers off
+    # during suspend and must be reconfigured after resume (restart this
+    # service manually, or re-run it).
     systemd.services.xmm7360 = let
       inherit (pkgs) kmod;
-      # Be ensured that the device is freshly booted
-      preStartScript = pkgs.writeShellScript "xmm7360-poststop" ''
+      preStartScript = pkgs.writeShellScript "xmm7360-prestart" ''
         ${kmod}/bin/modprobe xmm7360 || true
-        echo "Module loading completed"
       '';
-      # Clean up whatever, including bringing the interface down and delete it anyway.
       postStopScript = pkgs.writeShellScript "xmm7360-poststop" ''
         ${kmod}/bin/rmmod xmm7360 || true
       '';
     in {
-      wantedBy = lib.optionals (cfg.autoStart) [ "multi-user.target" ];
-      description = "Configuration service for Fibocom L850-GL";
-      # Sleep for 10 seconds to make sure that device is fully up.
-      # Include it here in ExecStart so that it would block the activation process anyway.
+      wantedBy = lib.optionals cfg.autoStart [ "multi-user.target" ];
+      description = "Configuration service for the Fibocom L850-GL modem";
+      # Wait a bit so the freshly inserted device is fully up before probing.
       script = ''
         sleep 10
-        ${cfg.package}/bin/open_xdatachannel.py -c ${xmm7360ConfigFile}
+        ${xmm7360Package}/bin/open_xdatachannel.py -c ${xmm7360ConfigFile}
       '';
       serviceConfig = {
-        # We want to keep it up, else the rules set up are discarded immediately.
         Type = "oneshot";
-        RemainAfterExit = true; # Used together with oneshot
-        TimeoutStartSec = "1min 30s"; # Timeout if it can't start and try again
+        RemainAfterExit = true;
+        TimeoutStartSec = "1min 30s";
         ExecStartPre = preStartScript;
-        # Clean-up
         ExecStopPost = postStopScript;
         Restart = "on-failure";
-        # SuccessExitStatus = 1;
       };
     };
   };
