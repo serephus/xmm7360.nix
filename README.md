@@ -56,3 +56,6 @@ By default the kernel module is built automatically against your configured
   `nodefaultroute`, `metric`, `ip-fetch-timeout`, `noresolv`, `dbus`.
 - `xmm7360.package` — override the kernel module package (defaults to a
   package built for your running kernel).
+
+When enabled, the service is automatically restarted after suspend/resume to
+reconfigure the modem (the driver has no power management support).

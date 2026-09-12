@@ -67,9 +67,12 @@ in {
     # would prevent the out-of-tree `xmm7360` driver from binding to it.
     boot.blacklistedKernelModules = [ "iosm" ];
 
-    # Note: the driver has no power management support. The modem powers off
-    # during suspend and must be reconfigured after resume (restart this
-    # service manually, or re-run it).
+    # The driver has no power management support: the modem powers off during
+    # suspend and must be reconfigured when the machine resumes.
+    powerManagement.resumeCommands = ''
+      ${pkgs.systemd}/bin/systemctl --no-block try-restart xmm7360.service
+    '';
+
     systemd.services.xmm7360 = let
       inherit (pkgs) kmod;
       preStartScript = pkgs.writeShellScript "xmm7360-prestart" ''
