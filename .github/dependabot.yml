@@ -14,21 +14,3 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-
-  # for templates: for a non-root directory the github-actions ecosystem only scans the
-  # top level for *.yml/*.yaml, so point at the workflows dir itself.
-  # python and typst have no workflow files yet, so they're not listed.
-  - package-ecosystem: "github-actions"
-    directory: "/modules/_templates/rust/.github/workflows"
-    schedule:
-      interval: "monthly"
-
-  - package-ecosystem: "github-actions"
-    directory: "/modules/_templates/bevy/.github/workflows"
-    schedule:
-      interval: "monthly"
-
-  - package-ecosystem: "github-actions"
-    directory: "/modules/_templates/cpp/.github/workflows"
-    schedule:
-      interval: "monthly"
