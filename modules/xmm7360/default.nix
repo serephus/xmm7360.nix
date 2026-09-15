@@ -122,10 +122,18 @@ in {
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        TimeoutStartSec = "1min 30s";
+        # After a reset the modem can take a while to register and attach;
+        # kill it only once it is clearly not coming back.
+        TimeoutStartSec = "3min";
         ExecStartPre = preStartScript;
         ExecStopPost = postStopScript;
         Restart = "on-failure";
+        RestartSec = "30s";
+      };
+      unitConfig = {
+        # Don't spin forever resetting/reloading a modem that never comes up.
+        StartLimitBurst = 3;
+        StartLimitIntervalSec = "15min";
       };
     };
   };
