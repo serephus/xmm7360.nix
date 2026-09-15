@@ -129,6 +129,10 @@ in {
         ExecStopPost = postStopScript;
         Restart = "on-failure";
         RestartSec = "30s";
+        # Exit code 2 means "the network never gave us an IP" (usually no
+        # data allowance/credit). That is not a firmware hang, so don't reset
+        # and reload the modem over and over for it.
+        RestartPreventExitStatus = [ 2 ];
       };
       unitConfig = {
         # Don't spin forever resetting/reloading a modem that never comes up.
