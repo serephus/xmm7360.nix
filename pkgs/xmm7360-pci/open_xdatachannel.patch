@@ -10,9 +10,17 @@ diff --git a/rpc/open_xdatachannel.py b/rpc/open_xdatachannel.py
  
  ipr = IPRoute()
  
-@@ -81,10 +81,19 @@
-         logging.error("Attach failed again, giving up")
-         sys.exit(1)
+@@ -78,13 +78,25 @@
+     _, status = rpc.unpack('nn', attach['body'])
+ 
+     if status == 0xffffffff:
+-        logging.error("Attach failed again, giving up")
+-        sys.exit(1)
++        logging.error(
++            "The network refused the packet-data attach. This usually means "
++            "the SIM has no data allowance (out of credit) or the APN is "
++            "wrong.")
++        sys.exit(2)
  
 +ip_wait = 120  # seconds to wait for the network to assign an address
 +ip_deadline = time.monotonic() + ip_wait
@@ -30,7 +38,7 @@ diff --git a/rpc/open_xdatachannel.py b/rpc/open_xdatachannel.py
      interval = cfg.ip_fetch_timeout
      logging.info(f"IP address couldn't be fetched, waiting {interval} seconds")
      time.sleep(interval)
-@@ -107,7 +116,8 @@
+@@ -107,7 +119,8 @@
      ipr.route('add',
                dst='default',
                priority=cfg.metric,
@@ -40,7 +48,7 @@ diff --git a/rpc/open_xdatachannel.py b/rpc/open_xdatachannel.py
  
  # Add DNS values to /etc/resolv.conf
  if not cfg.noresolv:
-@@ -128,7 +138,7 @@
+@@ -128,7 +141,7 @@
  r.execute('UtaRPCPSConnectSetupReq', csr_req)
  
  if not cfg.dbus:

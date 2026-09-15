@@ -60,7 +60,6 @@ By default the kernel module is built automatically against your configured
 When enabled, the service is automatically restarted after suspend/resume to
 reconfigure the modem (the driver has no power management support).
 
-If the modem registers but the network never assigns an IP address (for
-example because the SIM has no data allowance), the service fails with a clear
-error after 120 seconds instead of hanging, and does not reset/reload the
-modem in that case.
+If the network refuses packet data — for example because the SIM has no data
+allowance, the APN is wrong, or no IP is assigned — the service fails with a
+clear error and does not reset/reload the modem for it.
