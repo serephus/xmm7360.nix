@@ -125,8 +125,8 @@ in {
         # After a reset the modem can take a while to register and attach;
         # kill it only once it is clearly not coming back.
         TimeoutStartSec = "3min";
-        ExecStartPre = preStartScript;
-        ExecStopPost = postStopScript;
+        ExecStartPre = "${preStartScript}/bin/xmm7360-prestart";
+        ExecStopPost = "${postStopScript}/bin/xmm7360-poststop";
         Restart = "on-failure";
         RestartSec = "30s";
         # Exit code 2 means "the network never gave us an IP" (usually no
