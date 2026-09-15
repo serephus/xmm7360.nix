@@ -74,13 +74,43 @@ in {
     '';
 
     systemd.services.xmm7360 = let
-      inherit (pkgs) kmod;
-      preStartScript = pkgs.writeShellScript "xmm7360-prestart" ''
-        ${kmod}/bin/modprobe xmm7360 || true
-      '';
-      postStopScript = pkgs.writeShellScript "xmm7360-poststop" ''
-        ${kmod}/bin/rmmod xmm7360 || true
-      '';
+      preStartScript = pkgs.writeShellApplication {
+        name = "xmm7360-prestart";
+        runtimeInputs = [ pkgs.coreutils pkgs.kmod ];
+        text = ''
+          # Drop any stale instance of the module.
+          modprobe -r xmm7360 2>/dev/null || true
+
+          # The XMM7360 firmware frequently ends up in a state where the
+          # command ring no longer comes up, and a plain rmmod/modprobe does
+          # not recover it.  Issue a PCI reset (these devices support the ACPI
+          # reset method) before loading the module again.
+          for dev in /sys/bus/pci/devices/*; do
+            if [ -r "$dev/vendor" ] && [ -r "$dev/device" ] \
+              && [ "$(cat "$dev/vendor")" = "0x8086" ] \
+              && [ "$(cat "$dev/device")" = "0x7360" ]; then
+              if [ -w "$dev/reset_method" ]; then
+                read -r methods < "$dev/reset_method" || methods=""
+                case " $methods " in
+                  *" acpi "*) echo acpi > "$dev/reset_method" || true ;;
+                esac
+              fi
+              if [ -w "$dev/reset" ]; then
+                echo 1 > "$dev/reset" || true
+              fi
+            fi
+          done
+
+          modprobe xmm7360 || true
+        '';
+      };
+      postStopScript = pkgs.writeShellApplication {
+        name = "xmm7360-poststop";
+        runtimeInputs = [ pkgs.kmod ];
+        text = ''
+          rmmod xmm7360 || true
+        '';
+      };
     in {
       wantedBy = lib.optionals cfg.autoStart [ "multi-user.target" ];
       description = "Configuration service for the Fibocom L850-GL modem";

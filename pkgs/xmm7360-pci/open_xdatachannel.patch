@@ -1,6 +1,15 @@
 diff --git a/rpc/open_xdatachannel.py b/rpc/open_xdatachannel.py
 --- a/rpc/open_xdatachannel.py
 +++ b/rpc/open_xdatachannel.py
+@@ -44,7 +44,7 @@
+     r = rpc.XMMRPC()
+ except Exception as ex:
+     logging.error(ex)
+-    exit()
++    sys.exit(1)
+ 
+ ipr = IPRoute()
+ 
 @@ -107,7 +107,8 @@
      ipr.route('add',
                dst='default',
